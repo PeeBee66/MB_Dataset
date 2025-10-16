@@ -2,7 +2,7 @@
   "enabled": true,
   "github_url": "https://raw.githubusercontent.com/PeeBee66/Updated_TOR_Nodes/main/tor_nodes_latest.csv",
   "verify_ssl": false,
-  "opencti_url": "https://172.21.32.183:4000",
+  "opencti_url": "https://192.168.66.43:4000",
   "opencti_token": "de5789c5-1423-428f-9cc8-1299c946fae9",
   "auto_ingest": true
 }
