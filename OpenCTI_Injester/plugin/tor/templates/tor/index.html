@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOR Network Monitor</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c1e 0%, #2d5f2d 100%);
+            margin: 0;
+            padding: 20px;
+            color: #ffffff;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #90EE90;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(144, 238, 144, 0.3);
+        }
+        .stat-card h3 {
+            margin: 0 0 10px 0;
+            color: #90EE90;
+            font-size: 1.2em;
+        }
+        .stat-card .number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #ffffff;
+            margin: 10px 0;
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .btn:hover {
+            background: linear-gradient(135deg, #45a049 0%, #4CAF50 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        .btn.secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        }
+        .btn.secondary:hover {
+            background: linear-gradient(135deg, #5a6268 0%, #6c757d 100%);
+        }
+        .tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px 10px 0 0;
+            overflow: hidden;
+            border: 1px solid rgba(144, 238, 144, 0.3);
+        }
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            color: #ffffff;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            border-right: 1px solid rgba(144, 238, 144, 0.2);
+        }
+        .tab:last-child {
+            border-right: none;
+        }
+        .tab.active, .tab:hover {
+            background: rgba(144, 238, 144, 0.2);
+            color: #90EE90;
+        }
+        .tab-content {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(144, 238, 144, 0.3);
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            padding: 20px;
+            min-height: 400px;
+        }
+        .tab-pane {
+            display: none;
+        }
+        .tab-pane.active {
+            display: block;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .data-table th {
+            background: rgba(144, 238, 144, 0.2);
+            color: #90EE90;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+            border-bottom: 2px solid rgba(144, 238, 144, 0.3);
+        }
+        .data-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+        .data-table tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .data-table tr:hover {
+            background: rgba(144, 238, 144, 0.1);
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-new {
+            background: #28a745;
+            color: white;
+        }
+        .status-dead {
+            background: #dc3545;
+            color: white;
+        }
+        .exit-node {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+        .regular-node {
+            color: #4ecdc4;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #cccccc;
+        }
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        .last-updated {
+            text-align: center;
+            margin-top: 20px;
+            color: #cccccc;
+            font-size: 14px;
+        }
+        .home-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            text-decoration: none;
+            color: #90EE90;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(144, 238, 144, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        .home-button:hover {
+            background: rgba(144, 238, 144, 0.2);
+            color: #ffffff;
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="home-button" title="Home">🏠</a>
+        <h1>TOR Network Monitor</h1>
+
+        <div style="text-align: center; color: #90EE90; font-size: 14px; margin-bottom: 20px;">
+            Last Fetch: {% if last_updated %}{{ last_updated }}{% else %}Never{% endif %}
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Active Nodes</h3>
+                <div class="number">{{ stats.total_nodes }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>New Nodes</h3>
+                <div class="number">{{ stats.new_nodes }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Dead Nodes</h3>
+                <div class="number">{{ stats.dead_nodes }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Exit Nodes</h3>
+                <div class="number">{{ stats.exit_nodes }}</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="fetchNodes()">Fetch TOR Nodes</button>
+            <button class="btn secondary" onclick="ingestNodes()">Ingest to OpenCTI</button>
+        </div>
+
+        <div class="search-controls">
+            <form method="GET" style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;" id="searchForm">
+                <input type="text" name="search" class="search-input"
+                       placeholder="Search by IP, Name, Version, or Flags..."
+                       value="{{ search_query or '' }}"
+                       style="padding: 10px; border: 1px solid rgba(144, 238, 144, 0.3); border-radius: 5px; width: 300px; background: rgba(255, 255, 255, 0.1); color: #ffffff;">
+                <input type="hidden" name="tab" value="{{ current_tab or 'all-nodes' }}" id="currentTab">
+                <button type="submit" class="btn">Search</button>
+                {% if search_query %}
+                    <a href="?tab={{ current_tab }}" class="btn secondary">Clear</a>
+                {% endif %}
+            </form>
+        </div>
+
+        <div class="tabs">
+            <button class="tab" onclick="showTab('new-nodes')">New Nodes</button>
+            <button class="tab" onclick="showTab('dead-nodes')">Dead Nodes</button>
+            <button class="tab active" onclick="showTab('all-nodes')">All Active Nodes</button>
+        </div>
+
+        <div class="tab-content">
+            <div id="new-nodes" class="tab-pane">
+                {% if new_nodes and new_nodes|length > 0 %}
+                    <div class="pagination" style="margin-bottom: 20px;">
+                        Page {{ page }} of {{ total_pages }} ({{ total_records }} total records)
+                        {% if page > 1 %}
+                            <a href="?tab={{ current_tab }}&page=1{% if search_query %}&search={{ search_query }}{% endif %}" style="margin-left: 10px; padding: 8px 12px; border: 1px solid rgba(144, 238, 144, 0.3); border-radius: 3px; text-decoration: none; color: #90EE90;">First</a>
+                            <a href="?tab={{ current_tab }}&page={{ page - 1 }}{% if search_query %}&search={{ search_query }}{% endif %}" style="margin-left: 5px; padding: 8px 12px; border: 1px solid rgba(144, 238, 144, 0.3); border-radius: 3px; text-decoration: none; color: #90EE90;">Previous</a>
+                        {% endif %}
+
+                        <span style="margin-left: 5px; padding: 8px 12px; background: rgba(144, 238, 144, 0.3); color: white; border-radius: 3px;">{{ page }}</span>
+
+                        {% if page < total_pages %}
+                            <a href="?tab={{ current_tab }}&page={{ page + 1 }}{% if search_query %}&search={{ search_query }}{% endif %}" style="margin-left: 5px; padding: 8px 12px; border: 1px solid rgba(144, 238, 144, 0.3); border-radius: 3px; text-decoration: none; color: #90EE90;">Next</a>
+                            <a href="?tab={{ current_tab }}&page={{ total_pages }}{% if search_query %}&search={{ search_query }}{% endif %}" style="margin-left: 5px; padding: 8px 12px; border: 1px solid rgba(144, 238, 144, 0.3); border-radius: 3px; text-decoration: none; color: #90EE90;">Last</a>
+                        {% endif %}
+                    </div>
+
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>IP Address</th>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Flags</th>
+                                <th>Version</th>
+                                <th>Detected</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for node in new_nodes %}
+                            <tr>
+                                <td>{{ node.IP }}</td>
+                                <td>{{ node.Name or 'Unnamed' }}</td>
+                                <td>
+                                    {% if node.IsExit == 'ExitNode' %}
+                                        <span class="exit-node">Exit Node</span>
+                                    {% else %}
+                                        <span class="regular-node">Relay</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ node.Flags }}</td>
+                                <td>{{ node.Version }}</td>
+                                <td>
+                                    <span class="status-badge status-new">{{ node.detected_date }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="icon">🔍</div>
+                        <h3>No New Nodes</h3>
+                        <p>No new TOR nodes detected since last fetch.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div id="dead-nodes" class="tab-pane">
+                {% if dead_nodes and dead_nodes|length > 0 %}
+                    <div class="pagination" style="margin-bottom: 20px;">
+                        Page {{ page }} of {{ total_pages }} ({{ total_records }} total records)
+                        {% if page > 1 %}
+                            <a href="?tab={{ current_tab }}&page=1{% if search_query %}&search={{ search_query }}{% endif %}" style="margin-left: 10px; padding: 8px 12px; border: 1px solid rgba(144, 238, 144, 0.3); border-radius: 3px; text-decoration: none; color: #90EE90;">First</a>
+                            <a href="?tab={{ current_tab }}&page={{ page - 1 }}{% if search_query %}&search={{ search_query }}{% endif %}" style="margin-left: 5px; padding: 8px 12px; border: 1px solid rgba(144, 238, 144, 0.3); border-radius: 3px; text-decoration: none; color: #90EE90;">Previous</a>
+                        {% endif %}
+
+                        <span style="margin-left: 5px; padding: 8px 12px; background: rgba(144, 238, 144, 0.3); color: white; border-radius: 3px;">{{ page }}</span>
+
+                        {% if page < total_pages %}
+                            <a href="?tab={{ current_tab }}&page={{ page + 1 }}{% if search_query %}&search={{ search_query }}{% endif %}" style="margin-left: 5px; padding: 8px 12px; border: 1px solid rgba(144, 238, 144, 0.3); border-radius: 3px; text-decoration: none; color: #90EE90;">Next</a>
+                            <a href="?tab={{ current_tab }}&page={{ total_pages }}{% if search_query %}&search={{ search_query }}{% endif %}" style="margin-left: 5px; padding: 8px 12px; border: 1px solid rgba(144, 238, 144, 0.3); border-radius: 3px; text-decoration: none; color: #90EE90;">Last</a>
+                        {% endif %}
+                    </div>
+
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>IP Address</th>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Flags</th>
+                                <th>Version</th>
+                                <th>Removed</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for node in dead_nodes %}
+                            <tr>
+                                <td>{{ node.IP }}</td>
+                                <td>{{ node.Name or 'Unnamed' }}</td>
+                                <td>
+                                    {% if node.IsExit == 'ExitNode' %}
+                                        <span class="exit-node">Exit Node</span>
+                                    {% else %}
+                                        <span class="regular-node">Relay</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ node.Flags }}</td>
+                                <td>{{ node.Version }}</td>
+                                <td>
+                                    <span class="status-badge status-dead">{{ node.removed_date }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="icon">💀</div>
+                        <h3>No Dead Nodes</h3>
+                        <p>No TOR nodes have gone offline since last fetch.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div id="all-nodes" class="tab-pane active">
+                {% if all_nodes and all_nodes|length > 0 %}
+                    <div class="pagination" style="margin-bottom: 20px;">
+                        Page {{ page }} of {{ total_pages }} ({{ total_records }} total records)
+                        {% if page > 1 %}
+                            <a href="?tab={{ current_tab }}&page=1{% if search_query %}&search={{ search_query }}{% endif %}" style="margin-left: 10px; padding: 8px 12px; border: 1px solid rgba(144, 238, 144, 0.3); border-radius: 3px; text-decoration: none; color: #90EE90;">First</a>
+                            <a href="?tab={{ current_tab }}&page={{ page - 1 }}{% if search_query %}&search={{ search_query }}{% endif %}" style="margin-left: 5px; padding: 8px 12px; border: 1px solid rgba(144, 238, 144, 0.3); border-radius: 3px; text-decoration: none; color: #90EE90;">Previous</a>
+                        {% endif %}
+
+                        <span style="margin-left: 5px; padding: 8px 12px; background: rgba(144, 238, 144, 0.3); color: white; border-radius: 3px;">{{ page }}</span>
+
+                        {% if page < total_pages %}
+                            <a href="?tab={{ current_tab }}&page={{ page + 1 }}{% if search_query %}&search={{ search_query }}{% endif %}" style="margin-left: 5px; padding: 8px 12px; border: 1px solid rgba(144, 238, 144, 0.3); border-radius: 3px; text-decoration: none; color: #90EE90;">Next</a>
+                            <a href="?tab={{ current_tab }}&page={{ total_pages }}{% if search_query %}&search={{ search_query }}{% endif %}" style="margin-left: 5px; padding: 8px 12px; border: 1px solid rgba(144, 238, 144, 0.3); border-radius: 3px; text-decoration: none; color: #90EE90;">Last</a>
+                        {% endif %}
+                    </div>
+
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>IP Address</th>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Flags</th>
+                                <th>Version</th>
+                                <th>Uptime</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for node in all_nodes %}
+                            <tr>
+                                <td>{{ node.IP }}</td>
+                                <td>{{ node.Name or 'Unnamed' }}</td>
+                                <td>
+                                    {% if node.IsExit == 'ExitNode' %}
+                                        <span class="exit-node">Exit Node</span>
+                                    {% else %}
+                                        <span class="regular-node">Relay</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ node.Flags }}</td>
+                                <td>{{ node.Version }}</td>
+                                <td>{{ node.Uptime }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <div class="pagination" style="margin-top: 20px;">
+                        {% if page > 1 %}
+                            <a href="?page={{ page - 1 }}{% if search_query %}&search={{ search_query }}{% endif %}" style="margin-right: 10px; padding: 8px 12px; border: 1px solid rgba(144, 238, 144, 0.3); border-radius: 3px; text-decoration: none; color: #90EE90;">Previous</a>
+                        {% endif %}
+                        {% if page < total_pages %}
+                            <a href="?page={{ page + 1 }}{% if search_query %}&search={{ search_query }}{% endif %}" style="padding: 8px 12px; border: 1px solid rgba(144, 238, 144, 0.3); border-radius: 3px; text-decoration: none; color: #90EE90;">Next</a>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="icon">📡</div>
+                        <h3>No Active Nodes</h3>
+                        <p>No TOR nodes data available. Click "Fetch TOR Nodes" to load data.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="last-updated">
+            Last updated: {{ last_updated or 'Never' }}
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // Hide all tab panes
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.remove('active');
+            });
+
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab pane
+            document.getElementById(tabName).classList.add('active');
+
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+
+            // Update the hidden input for the current tab
+            document.getElementById('currentTab').value = tabName;
+        }
+
+        function fetchNodes() {
+            fetch('/plugin/tor/fetch_nodes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('TOR nodes fetched successfully!');
+                    location.reload();
+                } else {
+                    alert('Error fetching nodes: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+            });
+        }
+
+        function ingestNodes() {
+            if (confirm('This will take over 10 minutes to ingest into OpenCTI. Automatic ingests are being done daily when new data is populated. Do you want to continue?')) {
+                fetch('/plugin/tor/ingest_to_opencti', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Nodes ingested successfully!');
+                    } else {
+                        alert('Error ingesting nodes: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    alert('Error: ' + error);
+                });
+            }
+        }
+
+        // Initialize the correct tab on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentTab = '{{ current_tab or "all-nodes" }}';
+
+            // Remove active class from all tabs and panes
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.remove('active');
+            });
+
+            // Activate the correct tab
+            const activeTab = document.querySelector(`button[onclick="showTab('${currentTab}')"]`);
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
+
+            // Activate the correct tab pane
+            const activePane = document.getElementById(currentTab);
+            if (activePane) {
+                activePane.classList.add('active');
+            }
+
+            // Update the hidden input
+            document.getElementById('currentTab').value = currentTab;
+        });
+    </script>
+</body>
+</html>

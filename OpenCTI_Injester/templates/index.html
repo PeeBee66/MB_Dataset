@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>OpenCTI Injester</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 300;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .plugins-grid {
+            display: grid;
+            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+        
+        .plugin-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.18);
+        }
+        
+        .plugin-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 48px rgba(0,0,0,0.15);
+        }
+        
+        .plugin-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+        }
+        
+        .plugin-description {
+            color: #666;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+        
+        .plugin-link {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .plugin-link.tor {
+            background: linear-gradient(135deg, #81c784 0%, #66bb6a 100%);
+        }
+
+        .plugin-link.tor:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(129, 199, 132, 0.4);
+        }
+
+        .plugin-link.malwarebazaar {
+            background: linear-gradient(135deg, #ffb74d 0%, #ff9800 100%);
+        }
+
+        .plugin-link.malwarebazaar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(255, 183, 77, 0.4);
+        }
+
+        .plugin-link:not(.tor):not(.malwarebazaar) {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .plugin-link:not(.tor):not(.malwarebazaar):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+        }
+        
+        .no-plugins {
+            text-align: center;
+            background: white;
+            border-radius: 12px;
+            padding: 3rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .no-plugins h3 {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+        
+        .no-plugins p {
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>OpenCTI Injester</h1>
+            <p>GitHub-based Data Collection Platform</p>
+            <div style="margin-top: 20px;">
+                <a href="/logout" style="color: white; text-decoration: none; opacity: 0.8; font-size: 14px;">Logout</a>
+                <span style="color: white; opacity: 0.5; margin: 0 10px;">|</span>
+                <a href="/api/scheduler/status" style="color: white; text-decoration: none; opacity: 0.8; font-size: 14px;">Scheduler Status</a>
+            </div>
+        </div>
+        
+        {% if plugins %}
+            <div class="plugins-grid">
+                {% for plugin in plugins %}
+                <div class="plugin-card">
+                    <div class="plugin-name">{{ plugin.name }}</div>
+                    <div class="plugin-description">{{ plugin.description or 'No description available' }}</div>
+                    <a href="{{ plugin.url_prefix }}" class="plugin-link {{ plugin.folder }}">Open Plugin →</a>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-plugins">
+                <h3>No Plugins Available</h3>
+                <p>Install plugins in the /plugin directory to get started.</p>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  opencti-injester:
+    build: .
+    container_name: opencti-injester
+    ports:
+      - "5055:5055"
+    volumes:
+      - ./plugin/tor/data:/app/plugin/tor/data
+      - ./plugin/malwarebazaar/data:/app/plugin/malwarebazaar/data
+      - ./flask_session:/app/flask_session
+    environment:
+      - APP_PASSWORD=admin
+      - SECRET_KEY=change-this-in-production-environment
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+
+  # For offline deployment, use this alternative service
+  opencti-injester-offline:
+    image: python:3.11-slim
+    container_name: opencti-injester-offline
+    ports:
+      - "5055:5055"
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: >
+      /bin/bash -c "
+      apt-get update &&
+      apt-get install -y gcc curl &&
+      if [ -d '/app/offline-packages' ]; then
+        pip install --no-index --find-links /app/offline-packages -r /app/requirements.txt;
+      else
+        pip install -r /app/requirements.txt;
+      fi &&
+      python run.py
+      "
+    environment:
+      - APP_PASSWORD=admin
+      - SECRET_KEY=change-this-in-production-environment
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    profiles:
+      - offline
