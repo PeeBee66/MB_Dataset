@@ -1,0 +1,22 @@
+services:
+  opencti-injester:
+    build: .
+    container_name: opencti-injester
+    ports:
+      - "5066:5055"
+    volumes:
+      - ./plugin/tor/data:/app/plugin/tor/data
+      - ./plugin/tor/config.json:/app/plugin/tor/config.json
+      - ./plugin/tor/main.py:/app/plugin/tor/main.py
+      - ./plugin/tor/templates:/app/plugin/tor/templates
+      - ./plugin/malwarebazaar/data:/app/plugin/malwarebazaar/data
+      - ./plugin/malwarebazaar/config.json:/app/plugin/malwarebazaar/config.json
+      - ./plugin/malwarebazaar/main.py:/app/plugin/malwarebazaar/main.py
+      - ./plugin/malwarebazaar/templates:/app/plugin/malwarebazaar/templates
+      - ./flask_session:/app/flask_session
+    environment:
+      - APP_PASSWORD=admin
+      - SECRET_KEY=change-this-in-production-environment
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+
